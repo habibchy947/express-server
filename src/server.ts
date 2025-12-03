@@ -199,6 +199,24 @@ app.post("/todos", async (req: Request, res: Response) => {
     }
 })
 
+//get all todo
+app.get("/todos", async (req: Request, res: Response) => {
+    try {
+        const result = await pool.query(`SELECT * FROM todos`);
+        res.status(200).json({
+            success: true,
+            message: "Todos retrieved successfully",
+            data: result.rows
+        })
+    } catch (err: any) {
+        res.status(500).json({
+            success: false,
+            message: "Todos not found"
+        })
+    }
+})
+
+
 app.listen(port, () => {
     console.log(`App listening on port: ${port}`);
 });

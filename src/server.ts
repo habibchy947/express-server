@@ -1,10 +1,10 @@
 import express, { Request, Response } from "express";
-import {Pool} from "pg";
+import { Pool } from "pg";
 import dotenv from "dotenv";
 import path from "path"
 
 
-dotenv.config({path: path.join(process.cwd(), '.env')})
+dotenv.config({ path: path.join(process.cwd(), '.env') })
 
 const app = express()
 const port = 5000;
@@ -14,7 +14,7 @@ const pool = new Pool({
     connectionString: `${process.env.CONNECTION_STR}`
 })
 
-const initDB = async() => {
+const initDB = async () => {
     await pool.query(`
         CREATE TABLE IF NOT EXISTS users(
         id SERIAL PRIMARY KEY,
@@ -49,18 +49,48 @@ app.use(express.json())
 
 // app.use(express.urlencoded())  >>> for form data
 
-app.get('/', (req: Request, res: Response) => {
+app.get("/", (req: Request, res: Response) => {
     res.send("Hello Next Level Developer!");
 });
 
-app.post("/", (req: Request, res: Response) => {
-    console.log(req.body)
-
-    res.status(201).json({
-        success: true,
-        message: "API is working"
-    })
+// post users
+app.post("/users", async (req: Request, res: Response) => {
+    const { name, email } = req.body;
+    try {
+        const result = await pool.query(`INSERT INTO users(name, email) VALUES($1, $2) RETURNING *`,
+            [name, email])
+        // console.log(result.rows[0])
+        res.status(500).json({
+            success: true,
+            message: "Data inserted successfully",
+            data: result.rows[0]
+        });
+    } catch (error: any) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
 })
+
+// get all users
+app.get("/users", async (req: Request, res: Response) => {
+    try {
+        const result = await pool.query(`SELECT * FROM users`);
+        res.status(200).json({
+            success: true,
+            message: "Users retrieved successfully",
+            data: result.rows,
+        })
+    } catch (error: any) {
+        res.status(500).json({
+            success: false,
+            message: error.message,
+            details: error
+        })
+    }
+})
+
 
 app.listen(port, () => {
     console.log(`App listening on port: ${port}`);
